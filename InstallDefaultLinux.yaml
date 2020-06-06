@@ -1,0 +1,54 @@
+---
+- hosts: all
+  tasks:
+
+
+  - name: install needed network manager libs
+    package:
+       name:
+         - NetworkManager-libnm
+         - nm-connection-editor
+         - python3-libsemanage
+         - python3-policycoreutils
+       state: present
+
+  - name: create directory with parent directories
+    file:
+     path: /root/.ssh/
+     state: directory
+    when: (ansible_facts['system'] == "Linux")
+
+#  - name: Copy Keys
+#    copy:
+#     src: /root/.ssh/authorized_keys
+#     dest: /root/.ssh/authorized_keys
+#     force: yes
+#     owner: root
+#     group: root
+#     mode: 0700
+#    when: (ansible_facts['system'] == "Linux")
+
+#Set Time Zone
+  - name: Ajustando o timezone do sistema
+    timezone: name=America/Sao_Paulo
+    when: (ansible_facts['system'] == "Linux")
+
+#SELINUX
+  - name: Desabilitando o SeLinux
+    selinux: state=disabled
+    when: (ansible_facts['system'] == "Linux" and ansible_facts['selinux_python_present'] == "Linux")
+
+  - name: Add packages on FreeBSD 
+    pkgng:
+      name: rsync,bash,most,bash-completion,vnstat,htop,wget,curl
+    when: (ansible_facts['system'] == "FreeBSD")
+
+  - name: Add two IPv4 DNS server addresses
+    nmcli:
+      conn_name: ens192
+      type: ethernet
+      dns4:
+      - 192.168.11.10
+      - 192.168.10.100
+      state: present
+

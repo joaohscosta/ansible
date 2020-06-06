@@ -1,0 +1,14 @@
+- hosts: windows
+  tasks:
+     - name: Disable Firewall 
+       win_firewall:
+          state: disabled
+          profiles:
+             - Domain
+             - Private
+             - Public
+       tags: disable_firewall
+
+     - name: Set timezone to 'Brasilia' (GMT-03:00)
+       win_timezone:
+          timezone: E. South America Standard Time

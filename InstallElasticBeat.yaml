@@ -1,0 +1,166 @@
+---
+- hosts: LINUX:LinuxUbuntu
+  tasks:
+    ### Instala Repositorio do ElasticSearch 7x
+    - name: Install ElasticBeat - CENTOS
+      yum:
+    
+    - name: Install Elasticsearch RPM KEY
+      rpm_key:
+        key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        state: present
+      become: true
+
+    - name: Install Elasticsearch 7.x RPM Repository
+      yum_repository:
+        name: elasticsearch-7.x
+        description: Elasticsearch Repository For 7.x Packages
+        baseurl: https://artifacts.elastic.co/packages/7.x/yum
+        gpgcheck: true
+        gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+      become: true
+      when: (ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == "Red Hat Enterprise Linux" or ansible_facts['distribution'] == "OracleLinux") and
+            (ansible_facts['architecture'] == "x86_64")
+
+    - name: Clean all packages
+      command: yum clean all 
+      when: (ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == "Red Hat Enterprise Linux" or ansible_facts['distribution'] == "OracleLinux") 
+
+    - name: Install Packages - CENTOS
+      yum:
+       name: 
+          - auditbeat
+          - filebeat
+          - metricbeat
+          - packetbeat
+       state: present
+      when: (ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == "Red Hat Enterprise Linux" or ansible_facts['distribution'] == "OracleLinux")
+
+### Filebeat
+    - name: Module Filebeat - Reconfigure Service File
+      lineinfile:
+        dest: /usr/lib/systemd/system/filebeat.service
+        regexp: Environment="BEAT_LOG_OPTS=-e"
+        insertafter: Environment="BEAT_LOG_OPTS=-e"
+        line: '#Environment="BEAT_LOG_OPTS=-e"'
+
+    - name: Module Filebeat - Copy Config Files
+      copy:
+        src: /scripts/ElasticBeat/configfiles/filebeat.yml
+        dest: /etc/filebeat/filebeat.yml
+        force: yes
+        owner: root
+        group: root
+        mode: 0600
+      when: (ansible_facts['system'] == "Linux")
+
+    - name: Module Filebeat - Enable module system
+      shell: /usr/bin/filebeat modules enable system; > /var/log/InstallElastcBeat.log
+      ignore_errors: yes
+
+    - name: Module Filebeat - Setup Modulo
+      shell: /usr/bin/filebeat setup >> /var/log/InstallElastcBeat.log
+      ignore_errors: yes
+
+    - name: Module Filebeat - Inicia Services
+      systemd:
+        state: restarted
+        daemon_reload: yes
+        name: filebeat
+
+### Auditbeat
+    - name: Module auditbeat - Reconfigure Service File
+      lineinfile:
+        dest: /usr/lib/systemd/system/auditbeat.service
+        regexp: Environment="BEAT_LOG_OPTS=-e"
+        insertafter: Environment="BEAT_LOG_OPTS=-e"
+        line: '#Environment="BEAT_LOG_OPTS=-e"'
+
+    - name: Module auditbeat - Copy Config Files
+      copy:
+        src: /scripts/ElasticBeat/configfiles/auditbeat.yml
+        dest: /etc/auditbeat/auditbeat.yml
+        force: yes
+        owner: root
+        group: root
+        mode: 0600
+      when: (ansible_facts['system'] == "Linux")
+
+    - name: Module auditbeat - Enable module system
+      shell: /usr/bin/auditbeat modules enable system; > /var/log/InstallElastcBeat.log
+      ignore_errors: yes
+
+    - name: Module auditbeat - Setup Modulo
+      shell: /usr/bin/auditbeat setup >> /var/log/InstallElastcBeat.log
+      ignore_errors: yes
+
+    - name: Module auditbeat - Inicia Services
+      systemd:
+        state: restarted
+        daemon_reload: yes
+        name: auditbeat
+
+
+### Metricbeat
+    - name: Module metricbeat - Reconfigure Service File
+      lineinfile:
+        dest: /usr/lib/systemd/system/metricbeat.service
+        regexp: Environment="BEAT_LOG_OPTS=-e"
+        insertafter: Environment="BEAT_LOG_OPTS=-e"
+        line: '#Environment="BEAT_LOG_OPTS=-e"'
+
+    - name: Module metricbeat - Copy Config Files
+      copy:
+        src: /scripts/ElasticBeat/configfiles/metricbeat.yml
+        dest: /etc/metricbeat/metricbeat.yml
+        force: yes
+        owner: root
+        group: root
+        mode: 0600
+      when: (ansible_facts['system'] == "Linux")
+
+    - name: Module metricbeat - Enable module system
+      shell: /usr/bin/metricbeat modules enable system; > /var/log/InstallElastcBeat.log
+      ignore_errors: yes
+
+    - name: Module metricbeat - Setup Modulo
+      shell: /usr/bin/metricbeat setup >> /var/log/InstallElastcBeat.log
+      ignore_errors: yes
+
+    - name: Module metricbeat - Inicia Services
+      systemd:
+        state: restarted
+        daemon_reload: yes
+        name: metricbeat
+
+### Packetbeat
+    - name: Module packetbeat  - Reconfigure Service File
+      lineinfile:
+        dest: /usr/lib/systemd/system/packetbeat.service
+        regexp: Environment="BEAT_LOG_OPTS=-e"
+        insertafter: Environment="BEAT_LOG_OPTS=-e"
+        line: '#Environment="BEAT_LOG_OPTS=-e"'
+
+    - name: Module metricbeat - Copy Config Files
+      copy:
+        src: /scripts/ElasticBeat/configfiles/packetbeat.yml
+        dest: /etc/packetbeat/packetbeat.yml
+        force: yes
+        owner: root
+        group: root
+        mode: 0600
+      when: (ansible_facts['system'] == "Linux")
+
+    - name: Module packetbeat - Enable module system
+      shell: /usr/bin/packetbeat modules enable system; > /var/log/InstallElastcBeat.log
+      ignore_errors: yes
+
+    - name: Module packetbeat - Setup Modulo
+      shell: /usr/bin/packetbeat setup >> /var/log/InstallElastcBeat.log
+      ignore_errors: yes
+
+    - name: Module metricbeat - Inicia Services
+      systemd:
+        state: restarted
+        daemon_reload: yes
+        name: packetbeat
